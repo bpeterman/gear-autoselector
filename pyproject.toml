@@ -8,6 +8,8 @@ authors = ["Blake Peterman <blake@peterman.io>"]
 python = "^3.9"
 requests = "^2.27.1"
 Django = "^4.0.2"
+psycopg2 = "^2.9.3"
+django-extensions = "^3.1.5"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"

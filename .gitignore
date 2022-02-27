@@ -4,3 +4,4 @@ venv
 segment_scores.json
 activities.json
 __pycache__
+.vscode

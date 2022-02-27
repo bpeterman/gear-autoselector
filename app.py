@@ -2,7 +2,6 @@ import json
 import os
 import time
 from collections import Counter
-from re import I
 from typing import List, Optional
 
 import requests

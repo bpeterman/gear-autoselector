@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres
+    container_name: gear_db
+    volumes:
+      - gear_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_PASSWORD
+    networks:
+      - network
+
+  app:
+    container_name: gear_app
+    command: bash
+    build:
+      context: .
+    links:
+      - db:db
+    depends_on:
+      - db
+    volumes:
+      - ./:/gear_app
+    environment:
+      - CLIENT_ID
+      - CLIENT_SECRET
+      - AUTHORIZATION_CODE
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  gear_data:
