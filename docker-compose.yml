@@ -4,6 +4,8 @@ services:
   db:
     image: postgres
     container_name: gear_db
+    env_file:
+      - .env
     volumes:
       - gear_data:/var/lib/postgresql/data
     ports:
