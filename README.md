@@ -7,18 +7,13 @@ This app works by looking at some of your manually classified routes and weighti
 
 
 Things Left to do:
-1. Dockerize the application
-1. Listen for webhook
-1. Update description when changes have been made
 1. UI to allow reclassifying of rides if window has expired.
 1. Document flow the application
-1. Setup crons
 1. backfill scheduler
 1. Add support for other gear types
 1. Check scope on redirect to make sure we have the permissions we need.
 1. Scheduler check for reclassification
 1. Add check for rate limit
-1. make user id unique
 1. document needed environment variables
 1. Add a what's next page after redirect.
 1. Add tests.
