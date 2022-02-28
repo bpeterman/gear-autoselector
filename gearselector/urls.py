@@ -19,4 +19,5 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("landing.urls")),
     path("exchange_token/", include("exchange_token.urls")),
+    path("webhook/", include("webhook.urls")),
 ]

@@ -7,20 +7,20 @@ class User(models.Model):
 
 
 class Gear(models.Model):
-    gear_id = models.CharField(max_length=200)
+    gear_id = models.CharField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class Activity(models.Model):
-    activity_id = models.CharField(max_length=200)
+    activity_id = models.CharField(max_length=200, unique=True)
     activity_date = models.DateTimeField("activity date")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     gear = models.ForeignKey(Gear, on_delete=models.CASCADE)
 
 
 class Auth(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     refresh_token = models.CharField(max_length=200)
     access_token = models.CharField(max_length=200)
     expires_at = models.IntegerField()

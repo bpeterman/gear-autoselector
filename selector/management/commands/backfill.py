@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
-from selector.library.strava import get_activities, process_activities
+
+from selector.library.strava import process_activities
 from selector.models import User
 
 

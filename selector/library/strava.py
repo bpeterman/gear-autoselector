@@ -1,11 +1,14 @@
 import os
 import time
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+from collections import Counter
+
+from django.db.models import Count
 
 import requests
 
-from selector.models import Auth, User, Segment, Activity, Gear
+from selector.models import Activity, Auth, Gear, Segment, User
 
 STRAVA_OAUTH_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_URL = "https://www.strava.com/api/v3"
@@ -131,4 +134,47 @@ def process_activities(user: User):
         )
         activity_obj.save()
         process_segments(full_activity["segment_efforts"], activity_obj)
-        time.sleep(12)
+        time.sleep(20)
+
+
+def calculate_ride_scores(segment_efforts: List[dict], user: User) -> Optional[Gear]:
+    gear_id_counts = Counter()
+    for segment_effort in segment_efforts:
+        segment = segment_effort["segment"]
+        segment_id = segment["id"]
+        gear_counts = (
+            Segment.objects.filter(segment_id=segment_id, activity__user=user)
+            .all()
+            .values("activity__gear")
+            .annotate(total=Count("activity__gear"))
+        )
+        for gear_count in gear_counts:
+            gear_id = gear_count["activity__gear"]
+            count = gear_count["total"]
+            gear_id_counts[gear_id] += count
+    most_common_gear_id, count = gear_id_counts.most_common(1)[0]
+    return Gear.objects.get(id=most_common_gear_id)
+
+
+def update_gear_for_id(activity_id: str, user: User, gear: Gear) -> dict:
+    access_token = check_access_token(user.user_id)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    description = f"👏 Gear automatically updated to {gear.name} by gear.blake.bike"
+    gear_id = gear.gear_id
+    response = requests.put(
+        f"{STRAVA_API_URL}/activities/{activity_id}",
+        headers=headers,
+        json={"gear_id": gear_id, "description": description},
+    )
+    return response.json()
+
+
+def process_new_activity(activity_id: str, owner_id: str) -> bool:
+    user = User.objects.get(user_id=owner_id)
+    full_activity = get_activity(activity_id, user)
+    segment_efforts = full_activity["segment_efforts"]
+    predicted_gear = calculate_ride_scores(segment_efforts, user)
+    response = update_gear_for_id(activity_id, user, predicted_gear)
+    print(response)
+    # TODO: update activity with new gear
+    # TODO: update activity description with credit

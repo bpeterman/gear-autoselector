@@ -14,6 +14,7 @@ def exchange_token(request):
             is_min_scope = False
 
     save_refresh_token(code)
+    # TODO: setup webhook
 
     if not is_min_scope:
         return HttpResponse("You're missing the minimum amount of permissions")

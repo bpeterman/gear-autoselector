@@ -11,8 +11,9 @@ Things Left to do:
 1. Listen for webhook
 1. Update description when changes have been made
 1. UI to allow reclassifying of rides if window has expired.
+1. Document flow the application
+1. Setup crons
 1. backfill scheduler
-1. Add guard to only check for bike rides
 1. Add support for other gear types
 1. Check scope on redirect to make sure we have the permissions we need.
 1. Scheduler check for reclassification
