@@ -17,6 +17,9 @@ services:
     container_name: gear_app
     build:
       context: .
+    command: bash /gear_app/etc/start-server.sh
+    env_file:
+      - .env
     depends_on:
       - db
     volumes:

@@ -15,4 +15,4 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 
 COPY . /gear_app
 
-CMD gunicorn -b 0.0.0.0:8000 gearselector.wsgi
+RUN chmod +x /gear_app/etc/start-server.sh
