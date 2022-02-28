@@ -1,12 +1,11 @@
 import os
 import time
+from collections import Counter
 from datetime import datetime
 from typing import List, Optional
-from collections import Counter
-
-from django.db.models import Count
 
 import requests
+from django.db.models import Count
 
 from selector.models import Activity, Auth, Gear, Segment, User
 
