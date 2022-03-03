@@ -1,9 +1,11 @@
 from django.http import HttpResponse
+from django.shortcuts import render
 
 from selector.library.strava import save_refresh_token
 
 
 def exchange_token(request):
+    # TODO: Fix minimum scope
     bare_minimum_scope = {"read", "activity:write", "activity:read_all"}
     code = request.GET.get("code")
     scope = request.GET.get("scope")
@@ -19,4 +21,5 @@ def exchange_token(request):
     if not is_min_scope:
         return HttpResponse("You're missing the minimum amount of permissions")
 
-    return HttpResponse("You're signed up!")
+    # return HttpResponse("You're signed up!")
+    return render(request, "exchange_token/index.html")

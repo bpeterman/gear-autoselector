@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [os.environ.get("HOST")]
 INSTALLED_APPS = [
     "selector.apps.SelectorConfig",
     "landing.apps.LandingConfig",
+    "exchange_token.apps.ExchangeTokenConfig",
     "webhook.apps.WebhookConfig",
     "django.contrib.admin",
     "django.contrib.auth",
