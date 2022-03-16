@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 from collections import Counter
 from datetime import datetime
@@ -77,6 +78,9 @@ def save_refresh_token(code: str) -> None:
     athlete_auth.refresh_token = json_response["refresh_token"]
     athlete_auth.expires_at = json_response["expires_at"]
     athlete_auth.save()
+
+    process_new_user_thread = threading.Thread(target=process_activities, args=[user])
+    process_new_user_thread.start()
 
 
 def get_activities(athlete_id: str, page: int = 1, per_page: int = 200) -> List[dict]:
@@ -166,7 +170,7 @@ def update_gear_for_id(
 ) -> dict:
     access_token = check_access_token(user.user_id)
     headers = {"Authorization": f"Bearer {access_token}"}
-    description = full_activity["description"]
+    description = full_activity["description"] or ""
     description += f"\n✨ Gear automatically updated to {gear.name} by gear.blake.bike✨"
     gear_id = gear.gear_id
     response = requests.put(

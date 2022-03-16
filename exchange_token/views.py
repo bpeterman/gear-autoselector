@@ -1,5 +1,3 @@
-import os
-
 from django.http import HttpResponse
 from django.shortcuts import render
 
@@ -22,7 +20,5 @@ def exchange_token(request):
         )
 
     save_refresh_token(code)
-    # TODO: setup webhook
-    # TODO: Can you call django mgmt commands directly and detached?
 
     return render(request, "exchange_token/index.html")
