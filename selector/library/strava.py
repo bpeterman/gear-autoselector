@@ -8,6 +8,7 @@ import requests
 from django.db.models import Count
 
 from selector.models import Activity, Auth, Gear, Segment, User
+from webhook.models import Event
 
 STRAVA_OAUTH_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_URL = "https://www.strava.com/api/v3"
@@ -108,6 +109,27 @@ def process_segments(segment_efforts: List[dict], activity: Activity) -> None:
     Segment.objects.bulk_create(segment_objs)
 
 
+def process_activity(full_activity: dict, user: User) -> None:
+    gear_id = full_activity["gear"]["id"]
+    gear_name = full_activity["gear"]["name"]
+    gear_obj, is_gear_created = Gear.objects.get_or_create(
+        gear_id=gear_id, user=user, name=gear_name
+    )
+    if is_gear_created:
+        gear_obj.save()
+    activity_date_str = full_activity["start_date"].replace("Z", "+00:00")
+    activity_date = datetime.fromisoformat(activity_date_str)
+    activity_id = full_activity["id"]
+    activity_obj = Activity(
+        activity_id=activity_id,
+        user=user,
+        activity_date=activity_date,
+        gear=gear_obj,
+    )
+    activity_obj.save()
+    process_segments(full_activity["segment_efforts"], activity_obj)
+
+
 def process_activities(user: User):
     activities = get_activities(user.user_id)
     for activity in activities:
@@ -116,23 +138,7 @@ def process_activities(user: User):
         if type not in ALLOWED_TYPES:
             continue
         full_activity = get_activity(activity_id, user)
-        gear_id = full_activity["gear"]["id"]
-        gear_name = full_activity["gear"]["name"]
-        gear_obj, is_gear_created = Gear.objects.get_or_create(
-            gear_id=gear_id, user=user, name=gear_name
-        )
-        if is_gear_created:
-            gear_obj.save()
-        activity_date_str = full_activity["start_date"].replace("Z", "+00:00")
-        activity_date = datetime.fromisoformat(activity_date_str)
-        activity_obj = Activity(
-            activity_id=activity_id,
-            user=user,
-            activity_date=activity_date,
-            gear=gear_obj,
-        )
-        activity_obj.save()
-        process_segments(full_activity["segment_efforts"], activity_obj)
+        process_activity(full_activity, user)
         time.sleep(20)
 
 
@@ -155,10 +161,13 @@ def calculate_ride_scores(segment_efforts: List[dict], user: User) -> Optional[G
     return Gear.objects.get(id=most_common_gear_id)
 
 
-def update_gear_for_id(activity_id: str, user: User, gear: Gear) -> dict:
+def update_gear_for_id(
+    activity_id: str, user: User, gear: Gear, full_activity: dict
+) -> dict:
     access_token = check_access_token(user.user_id)
     headers = {"Authorization": f"Bearer {access_token}"}
-    description = f"👏 Gear automatically updated to {gear.name} by gear.blake.bike"
+    description = full_activity["description"]
+    description += f"\n✨ Gear automatically updated to {gear.name} by gear.blake.bike✨"
     gear_id = gear.gear_id
     response = requests.put(
         f"{STRAVA_API_URL}/activities/{activity_id}",
@@ -168,12 +177,59 @@ def update_gear_for_id(activity_id: str, user: User, gear: Gear) -> dict:
     return response.json()
 
 
-def process_new_activity(activity_id: str, owner_id: str) -> bool:
-    user = User.objects.get(user_id=owner_id)
-    full_activity = get_activity(activity_id, user)
+def process_new_activity(event: Event) -> bool:
+    user = User.objects.get(user_id=event.owner_id)
+    full_activity = get_activity(event.object_id, user)
     segment_efforts = full_activity["segment_efforts"]
     predicted_gear = calculate_ride_scores(segment_efforts, user)
-    response = update_gear_for_id(activity_id, user, predicted_gear)
-    print(response)
-    # TODO: update activity with new gear
-    # TODO: update activity description with credit
+    update_gear_for_id(event.object_id, user, predicted_gear, full_activity)
+    process_activity(full_activity, user)
+    event.is_processed = True
+    event.save()
+
+
+def process_update(event: Event):
+    user = User.objects.get(user_id=event.owner_id)
+    full_activity = get_activity(event.object_id, user)
+    updates = event.updates
+    activity_name = None
+    if "title" in updates:
+        activity_name = updates["title"]
+    activity_id = event.object_id
+    activity = Activity.objects.get(activity_id=activity_id)
+    gear_id = full_activity["gear"]["id"]
+
+    if activity_name and "[reclassify]" in activity_name:
+        last_gear_id = activity.gear.gear_id
+        if last_gear_id != gear_id:
+            new_gear_obj = Gear.objects.filter(gear_id=gear_id).first()
+            activity.gear = new_gear_obj
+            activity.save()
+            description = full_activity["description"]
+            description += f"\n✅ Ride reclassified"
+            access_token = check_access_token(user.user_id)
+            headers = {"Authorization": f"Bearer {access_token}"}
+            requests.put(
+                f"{STRAVA_API_URL}/activities/{activity_id}",
+                headers=headers,
+                json={"description": description},
+            )
+
+    event.is_processed = True
+    event.save()
+
+
+def process_delete(event: Event) -> None:
+    activity = Activity.objects.get(activity_id=event.object_id)
+    activity.delete()
+
+
+def process_strava_webhook(event_id: str) -> None:
+    event = Event.objects.get(pk=event_id)
+    aspect_type = event.aspect_type
+    if aspect_type == "create":
+        process_new_activity(event)
+    elif aspect_type == "update":
+        process_update(event)
+    elif aspect_type == "delete":
+        process_delete(event)

@@ -1,9 +1,11 @@
 import os
+import threading
 
-from django.http.response import JsonResponse, HttpResponse
+from django.http.response import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 
+from selector.library.strava import process_strava_webhook
 from webhook.models import Event, Subscription
 
 
@@ -33,6 +35,11 @@ def webhook(request):
         updates=updates,
     )
     event.save()
+
+    process_webhook_thread = threading.Thread(
+        target=process_strava_webhook, args=[event.pk]
+    )
+    process_webhook_thread.start()
 
     return JsonResponse({"success": True})
 
