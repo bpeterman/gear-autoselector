@@ -166,7 +166,7 @@ def calculate_ride_scores(segment_efforts: List[dict], user: User) -> Optional[G
     most_common = gear_id_counts.most_common(1)
     if not most_common:
         return None
-    most_common_gear_id, count = most_common
+    most_common_gear_id, count = most_common[0]
     return Gear.objects.get(id=most_common_gear_id)
 
 
