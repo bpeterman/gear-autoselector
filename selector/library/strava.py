@@ -163,7 +163,10 @@ def calculate_ride_scores(segment_efforts: List[dict], user: User) -> Optional[G
             gear_id = gear_count["activity__gear"]
             count = gear_count["total"]
             gear_id_counts[gear_id] += count
-    most_common_gear_id, count = gear_id_counts.most_common(1)[0]
+    most_common = gear_id_counts.most_common(1)
+    if not most_common:
+        return None
+    most_common_gear_id, count = most_common
     return Gear.objects.get(id=most_common_gear_id)
 
 
@@ -183,12 +186,33 @@ def update_gear_for_id(
     return response.json()
 
 
+def update_description(description: str, user: User, full_activity: dict) -> None:
+    activity_id = full_activity["id"]
+    full_description = full_activity["description"] or ""
+    full_description += description
+    access_token = check_access_token(user.user_id)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    requests.put(
+        f"{STRAVA_API_URL}/activities/{activity_id}",
+        headers=headers,
+        json={"description": description},
+    )
+
+
 def process_new_activity(event: Event) -> bool:
     user = User.objects.get(user_id=event.owner_id)
     full_activity = get_activity(event.object_id, user)
     segment_efforts = full_activity["segment_efforts"]
     predicted_gear = calculate_ride_scores(segment_efforts, user)
-    update_gear_for_id(event.object_id, user, predicted_gear, full_activity)
+    # NOTE: if we couldn't predict gear don't do anything
+    if predicted_gear:
+        update_gear_for_id(event.object_id, user, predicted_gear, full_activity)
+    else:
+        update_description(
+            "\n🤷 Couldn't automatically determine gear for this activity by gear.blake.bike",
+            user,
+            full_activity,
+        )
     process_activity(full_activity, user)
     event.is_processed = True
     event.save()
