@@ -186,6 +186,10 @@ def update_gear_for_id(
 def process_new_activity(event: Event) -> bool:
     user = User.objects.get(user_id=event.owner_id)
     full_activity = get_activity(event.object_id, user)
+    type = full_activity["type"]
+    # XXX: We need some better logic here.
+    if type != "Ride":
+        return
     segment_efforts = full_activity["segment_efforts"]
     predicted_gear = calculate_ride_scores(segment_efforts, user)
     update_gear_for_id(event.object_id, user, predicted_gear, full_activity)
