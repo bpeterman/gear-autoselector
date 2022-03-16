@@ -202,6 +202,10 @@ def update_description(description: str, user: User, full_activity: dict) -> Non
 def process_new_activity(event: Event) -> bool:
     user = User.objects.get(user_id=event.owner_id)
     full_activity = get_activity(event.object_id, user)
+    type = full_activity["type"]
+    # XXX: We need some better logic here.
+    if type != "Ride":
+        return
     segment_efforts = full_activity["segment_efforts"]
     predicted_gear = calculate_ride_scores(segment_efforts, user)
     # NOTE: if we couldn't predict gear don't do anything
