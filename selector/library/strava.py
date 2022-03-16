@@ -144,6 +144,8 @@ def process_activities(user: User):
         full_activity = get_activity(activity_id, user)
         process_activity(full_activity, user)
         time.sleep(20)
+    user.backfilled = True
+    user.save()
 
 
 def calculate_ride_scores(segment_efforts: List[dict], user: User) -> Optional[Gear]:
