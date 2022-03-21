@@ -1,0 +1,7 @@
+name: Code Quality Checks
+on: [push]
+jobs:
+  Code Quality:
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker ps
