@@ -11,9 +11,6 @@ from webhook.models import Event, Subscription
 
 @api_view(["POST", "GET"])
 def webhook(request):
-    # TODO: check that the code matches the one we would have sent
-    # TODO: analyze the segments
-    # TODO: update the activity with the results
     if request.method == "GET":
         return process_initial_webhook_request(request)
     request_data = JSONParser().parse(request)

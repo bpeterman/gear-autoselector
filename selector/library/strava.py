@@ -13,7 +13,6 @@ from webhook.models import Event
 
 STRAVA_OAUTH_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_URL = "https://www.strava.com/api/v3"
-ACCESS_TOKEN_FILE = ".token.json"
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 AUTHORIZATION_CODE = os.environ.get("AUTHORIZATION_CODE")
@@ -21,9 +20,6 @@ ALLOWED_TYPES = {"Ride"}
 
 
 def check_access_token(athlete_id: str) -> Optional[str]:
-    # TODO: figure out what we want to do in a non-happy path case
-    # TODO: make sure there are no opportunities for SQL injection
-
     athlete_auth = Auth.objects.filter(user__user_id=athlete_id)
 
     if not athlete_auth:
