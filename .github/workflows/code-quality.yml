@@ -4,4 +4,4 @@ jobs:
   Code-Quality:
     runs-on: ubuntu-latest
     steps:
-      - run: docker ps
+      - run: docker compose build app
