@@ -6,6 +6,5 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3 
-
-      - run: ls
       - run: docker compose -f docker-compose-gha.yml build app
+      - run: docker compose -f docker-compose-gha.yml run app "isort --check-only .; black --check ."
